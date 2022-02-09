@@ -1,5 +1,3 @@
-//const e = require("cors");
-
 var cards = {};
 var totalcolumns = 0;
 var columns = [];
