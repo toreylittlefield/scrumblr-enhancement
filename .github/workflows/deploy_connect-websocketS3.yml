@@ -1,6 +1,7 @@
 name: s3 deployment connect-websocket branch
 
 on:
+  workflow_dispatch:
   push:
     branches: [connect-websocket] # the branch we want this to run on
 
