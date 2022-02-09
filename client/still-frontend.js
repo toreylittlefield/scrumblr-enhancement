@@ -473,12 +473,19 @@ async function loadBoardPage() {
   initCardsInScriptJS(boardData);
 }
 
-async function onLoad() {
-  const { pathname } = window.location;
+function localDevEnv (pathname) {
+  const boardname = getBoardFromQueryString();
   switch (pathname) {
     // home.html
     case '/': {
-      location.replace('/home.html');
+      if(!boardname) {
+        location.replace('/home.html');
+        break;
+      }
+    }
+    case '/index.html': {
+      addEventListenersToBoardPage();
+      loadBoardPage();
       break;
     }
     case '/home.html': {
@@ -486,15 +493,51 @@ async function onLoad() {
       history.replaceState(null, null, '/');
       break;
     }
+    default: {
+      // redirect
+      location.replace('/');
+    }
+  }
+}
+
+function productionEnv (pathname) {
+  const boardname = getBoardFromQueryString();
+  switch (pathname) {
+    // home.html
+    case '/': {
+      if(!boardname) {
+        location.replace('/home.html');
+        break;
+      }
+    }
     case '/index.html': {
       addEventListenersToBoardPage();
-      loadBoardPage(pathname);
+      loadBoardPage();
+      break;
+    }
+    case '/home.html': {
+      // do stuff for home.html
+      history.replaceState(null, null, '/');
       break;
     }
     default: {
       // redirect
       location.replace('/');
     }
+  }
+}
+
+async function onLoad() {
+  const { pathname, hostname } = window.location;
+  switch(hostname) {
+    case 'www.scrumblr.roarcoder.dev': {
+      productionEnv(pathname);
+      break;
+    }
+    default: {
+      localDevEnv(pathname)
+    }
+
   }
   // TODO
   // document.getElementById('confirmation-prompt').style.display = 'none';
