@@ -4,8 +4,8 @@ on:
   workflow_dispatch: #not sure about this part
   push:
     branches: 
-      - main 
-      - connect-websocket # the branch we want this to run on
+      - connect-websocket 
+      # the branch we want this to run on
 
 jobs:
   build:
