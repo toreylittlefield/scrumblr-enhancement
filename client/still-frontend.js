@@ -121,26 +121,6 @@ async function getBoards() {
 }
 
 /**
- * {
-    "Items": [
-        {
-            "BoardId": "f992080c-e2b1-4959-a617-267b3686497f",
-            "BoardName": "testboard",
-            "board_notes": [
-                {
-                    "note_id": "card94455729",
-                    "topic": "dsadsaa",
-                    "dateCreated": 1644231343818
-                }
-            ]
-        }
-    ],
-    "Count": 1,
-    "ScannedCount": 1
-}
- */
-
-/**
  *
  * @param {string} boardName
  * @typedef {{note_id: string, topic: string, dateCreated: number}} Note
