@@ -509,8 +509,10 @@ function productionEnv (pathname) {
         location.replace('/home.html');
         break;
       }
+      location.replace('/board?' + `boardname=${boardname}`);
+      break;
     }
-    case '/index.html': {
+    case '/board': {
       addEventListenersToBoardPage();
       loadBoardPage();
       break;
