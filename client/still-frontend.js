@@ -26,7 +26,6 @@ async function go() {
 
   localStorage.setItem('boardName', value);
   localStorage.setItem('boardId', sessionBoardId.BoardId);
-  
 
   // postNote("I am a note", "6f28a5d4-b14c-455b-9245-60d9e561d84e");
   // getNote("6f28a5d4-b14c-455b-9245-60d9e561d84e","5f216c4d-4aef-42c1-8fc3-0a1c4e076650")
