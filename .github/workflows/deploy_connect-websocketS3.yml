@@ -32,7 +32,7 @@ jobs:
         run: npm i
 
       - name: copy files to s3
-        run: aws s3 sync . s3://${{secrets.AWS_S3_BUCKET}}
+        run: aws s3 sync ./client s3://${{secrets.AWS_S3_BUCKET}}
 
       - name: Invalidate cache
         run: |
