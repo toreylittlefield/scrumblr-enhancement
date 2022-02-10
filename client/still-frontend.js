@@ -468,7 +468,14 @@ function postPatchNotesOnSave() {
 function addEventListenersToBoardPage () {
   const saveNoteBTN = document.getElementById('save-button');
   saveNoteBTN.addEventListener('click',postPatchNotesOnSave);
-  
+}
+
+function openToastMessage() {
+  document.getElementById('confirmation-prompt').classList.remove('hide');
+}
+
+function closeToastMessage() {
+  document.getElementById('confirmation-prompt').classList.add('hide');
 }
 
 /**
