@@ -2,6 +2,7 @@ let sessionBoardId;
 let url = "https://37run05fad.execute-api.ap-southeast-2.amazonaws.com/prod/board/";
 let boardNames;
 const webSocketURL = 'wss://n4f51sq0t1.execute-api.ap-southeast-2.amazonaws.com/prod';
+/**@type {WebSocket} */
 let webSocket;
 const PROD_HOST = 'www.scrumblr.roarcoder.dev';
 const isProduction = PROD_HOST === window.location.hostname;
@@ -280,16 +281,20 @@ async function patchBoardName(boardId, newName) {
     });
 }
 
+/**
+ * @description connect to the websocket
+ * @returns {Promise<'open' | 'error'>}
+ */
 function onConnect() {
   return new Promise((resolve, reject) => {
     webSocket = new WebSocket(webSocketURL);
     webSocket.onopen = (event) => {
-      console.log({ event }, 'websocket open');
-      resolve('open for business');
-    };
-    try {
-    } catch (exception) {
-      console.log(exception);
+      resolve('open');
+    }
+    webSocket.onerror = (event) => {
+      console.error('websocket error', event)
+      webSocket.onerror = null;
+      reject('error');
     }
   });
 }
@@ -376,15 +381,16 @@ function getUUID() {
   return crypto.randomUUID ? crypto.randomUUID() : create_UUID();
 }
 
+
 /**
  * @description forms a valid note to draw on the board based on script.js
- * @typedef {'yellow' | 'green' | 'blue' | 'white'} Colour
+ * @typedef {'yellow' | 'green' | 'blue' | 'white' | RandomColour} Colour
  * @typedef {{id: string, text: string, x: number, y: number, rot: number, colour: Colour, type: 'card' | null, sticker: null, animationspeed: null}} NoteToDraw
  * @param {Note} note
  * @param {{colour?: Colour, type?: 'card' | null}} options
  * @returns {NoteToDraw} returns a valid note to draw with script.js
  */
-function formAValidNote(note, { colour = 'blue', type = 'card' }) {
+function formAValidNote(note, { colour = randomCardColour(), type = 'card' }) {
   return {
     id: note.note_id,
     text: note.topic,
@@ -478,6 +484,25 @@ function closeToastMessage() {
   document.getElementById('confirmation-prompt').classList.add('hide');
 }
 
+
+/**
+* start aws websocket connection
+*/
+async function initWebSocket() {
+  const isOpen = await onConnect();
+  console.log({isOpen}, 'websocket is open');
+  if(isOpen === 'error') return;
+  /**
+ * receives a message from the websocket
+ */
+  webSocket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log({ data }, 'received message');
+  };
+}
+
+
+
 /**
  * @description loads the board and cards if it exists or redirects to home.html
  *
@@ -485,14 +510,31 @@ function closeToastMessage() {
 async function loadBoardPage() {
   const boardName = getBoardFromQueryString();
   if (!boardName) return redirectToHome();
+
   setLocalStorage('boardName', boardName);
+
   setBoardNameOnPage(boardName);
+
   addBoardQueryStringToURL(boardName);
+
   const boardData = await getBoardByName(boardName);
   if (boardData.Items.length === 0) return redirectToHome();
+
   const boardId = boardData.Items[0].BoardId;
   setLocalStorage('boardId', boardId);
+
   initCardsInScriptJS(boardData);
+
+  initWebSocket();
+
+    // document.querySelectorAll('[contenteditable').forEach(element => {
+    //   console.log({element})
+    //   // element.addEventListener('input', (event)=> {
+    //   //   console.log(event)
+    //   // })
+    // })
+
+
 }
 
 function localDevEnv (pathname) {
@@ -565,11 +607,5 @@ async function onLoad() {
   }
   // TODO
   // document.getElementById('confirmation-prompt').style.display = 'none';
-  const isOpen = await onConnect();
-  console.log(isOpen);
-  sendMessage();
-  webSocket.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    console.log({ data }, 'received message');
-  };
+
 }
