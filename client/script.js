@@ -399,8 +399,9 @@ function drawNewCard(id, text, x, y, rot, colour, type, sticker, animationspeed)
             onCardChange(id, content.target.innerText, null);
         },
         end: function(event) {
-            const card = {id, text: event.target.textContent, colour: '' }
-            console.log(card)
+            /**@type UpdateCard */
+            const card = {id, text: event.target.textContent, colour: '', actionType: 'updatecard' }
+            dispatchWebSocketMessage({action: 'default', message: card})
         }
     });
 

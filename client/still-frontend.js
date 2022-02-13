@@ -299,9 +299,16 @@ function onConnect() {
   });
 }
 
-function sendMessage() {
+/**
+ * @typedef {{id: string, text: string, actionType: 'updatecard'}} UpdateCard
+ * @typedef {'default'} Action
+ * @typedef {object} MessageType
+ * @param {{action: Action, message: MessageType }} dispatch
+ */
+function dispatchWebSocketMessage(dispatch = {action: 'default', message: ''}) {
   //TODO
-  webSocket.send(JSON.stringify({ action: 'default' }));
+  console.log({dispatch})
+  webSocket.send(JSON.stringify(dispatch));
 }
 
 function getBoardFromQueryString() {
@@ -498,6 +505,10 @@ async function initWebSocket() {
   webSocket.onmessage = (event) => {
     const data = JSON.parse(event.data);
     console.log({ data }, 'received message');
+    if(data.actionType === 'updatecard') {
+      document.getElementById(`content:${data.id}`).textContent = data.text;
+    }
+
   };
 }
 
