@@ -391,12 +391,16 @@ function drawNewCard(id, text, x, y, rot, colour, type, sticker, animationspeed)
                 rotateCardColor(id, $(this).data('colour'));
             });
  
-
+    
     card.children('.content').editable({
         multiline: true,
         saveDelay: 600,
         save: function(content) {
             onCardChange(id, content.target.innerText, null);
+        },
+        end: function(event) {
+            const card = {id, text: event.target.textContent, colour: '' }
+            console.log(card)
         }
     });
 
@@ -562,7 +566,7 @@ function initCards(cardArray) {
     }
 
     boardInitialized = true;
-    unblockUI();
+    // unblockUI();
 }
 
 
