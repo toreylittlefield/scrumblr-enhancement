@@ -300,17 +300,9 @@ function onConnect() {
 }
 
 /**
- * @typedef {{id: string, text: string, actionType: 'updatecard'}} UpdateCard
- * @typedef {'default'} Action
- * @typedef {object} MessageType
- * @param {{action: Action, message: MessageType }} dispatch
+ * @example ?boardname=testboard -> testboard
+ * @returns {string} boardname from the query param
  */
-function dispatchWebSocketMessage(dispatch = {action: 'default', message: ''}) {
-  //TODO
-  console.log({dispatch})
-  webSocket.send(JSON.stringify(dispatch));
-}
-
 function getBoardFromQueryString() {
   const params = new URLSearchParams(location.search);
   const boardname = params.get('boardname');
@@ -388,10 +380,9 @@ function getUUID() {
   return crypto.randomUUID ? crypto.randomUUID() : create_UUID();
 }
 
-
 /**
  * @description forms a valid note to draw on the board based on script.js
- * @typedef {'yellow' | 'green' | 'blue' | 'white' | RandomColour} Colour
+ * @typedef {'yellow' | 'green' | 'blue' | 'white'} Colour
  * @typedef {{id: string, text: string, x: number, y: number, rot: number, colour: Colour, type: 'card' | null, sticker: null, animationspeed: null}} NoteToDraw
  * @param {Note} note
  * @param {{colour?: Colour, type?: 'card' | null}} options
@@ -412,13 +403,17 @@ function formAValidNote(note, { colour = randomCardColour(), type = 'card' }) {
 }
 
 /**
- * @description uses the getMessage function in script to dispatch an action
- * @see {@link getMessage} NOTE: add other actions as needed in the future
- * @typedef {{action: 'initCards', data: NoteToDraw[]}} InitCards
- * @param {InitCards} message
+ * @typedef {'default'} Action
+ * @typedef {EditNote | DeleteNote} MessageType
+ * @see {@link getMessage}
  */
-function sendMessageToScriptJS(message) {
-  getMessage(message);
+
+/**
+ * sends a websocket message to AWS API Gateway
+ * @param {{action: Action, message: MessageType }} dispatch
+ */
+function dispatchWebSocketMessage(dispatch = {action: 'default', message: ''}) {
+    webSocket.send(JSON.stringify(dispatch));
 }
 
 /**
@@ -429,7 +424,7 @@ function initCardsInScriptJS(boardData) {
   const {board_notes} = boardData.Items[0];
   populatetextForNotesMap(board_notes);
   const cardsArray = board_notes.map(formAValidNote);
-  sendMessageToScriptJS({ action: 'initCards', data: cardsArray });
+  getMessage({ action: 'initCards', data: cardsArray });
 }
 /**
  * @typedef {{data: string, id: string , status: "Not Inserted" | 'Inserted'}} NewNote
@@ -464,6 +459,14 @@ function postPatchNotesOnSave() {
   }))
 }
 
+function openToastMessage() {
+    document.getElementById('confirmation-prompt').classList.remove('hide');
+}
+
+function closeToastMessage() {
+    document.getElementById('confirmation-prompt').classList.add('hide');
+}
+
 /**
  * 
  * @param {Note[]} notesFromDB 
@@ -483,36 +486,22 @@ function addEventListenersToBoardPage () {
   saveNoteBTN.addEventListener('click',postPatchNotesOnSave);
 }
 
-function openToastMessage() {
-  document.getElementById('confirmation-prompt').classList.remove('hide');
-}
-
-function closeToastMessage() {
-  document.getElementById('confirmation-prompt').classList.add('hide');
-}
-
-
 /**
-* start aws websocket connection
+* start aws websocket connection and receive messages here
 */
 async function initWebSocket() {
-  const isOpen = await onConnect();
-  console.log({isOpen}, 'websocket is open');
-  if(isOpen === 'error') return;
-  /**
- * receives a message from the websocket
- */
-  webSocket.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    console.log({ data }, 'received message');
-    if(data.actionType === 'updatecard') {
-      document.getElementById(`content:${data.id}`).textContent = data.text;
-    }
-
-  };
-}
-
-
+    const isOpen = await onConnect();
+    console.log({isOpen}, 'websocket is open');
+    
+    if(isOpen === 'error') return;
+  
+    webSocket.onmessage = (event) => {
+      /**@type MessageType */
+      const data = JSON.parse(event.data);
+      console.log({ data }, 'received message');
+      getMessage(data);
+    };
+  }
 
 /**
  * @description loads the board and cards if it exists or redirects to home.html
@@ -537,15 +526,6 @@ async function loadBoardPage() {
   initCardsInScriptJS(boardData);
 
   initWebSocket();
-
-    // document.querySelectorAll('[contenteditable').forEach(element => {
-    //   console.log({element})
-    //   // element.addEventListener('input', (event)=> {
-    //   //   console.log(event)
-    //   // })
-    // })
-
-
 }
 
 function localDevEnv (pathname) {
