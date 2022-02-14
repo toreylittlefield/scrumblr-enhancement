@@ -1,5 +1,5 @@
 let sessionBoardId;
-let url = "https://37run05fad.execute-api.ap-southeast-2.amazonaws.com/prod/board/";
+let url = ENV.URL;
 let boardNames;
 const webSocketURL = 'wss://n4f51sq0t1.execute-api.ap-southeast-2.amazonaws.com/prod';
 /**@type {WebSocket} */
@@ -13,40 +13,23 @@ async function getBoard() {
   return sessionBoardId;
 }
 
-async function go() {
-  var value = document.forms[0].elements['name'].value;
-  value = escape(value);
+/**
+ * checks if board name is unique, sets local storage, navigates to new board
+ * @param {string} boardName name of board to create
+ */
+async function createNewBoard(boardName) {
   /*
    * Checking if the entered BoardName already exists
    **/
   boardNames = await getBoardNames();
-  boardNames.includes(value) ? openAlert() : await postBoardName(value);
-  //patchBoardName("74171dcb-ee89-496a-828a-1b1c7302f628", "I am a small board")
-  // deleteBoard("09e49698-05b6-4457-8271-2a288af9f6f5")
-  // getBoardById("69761d59-d7a0-4e84-9a5b-c5119b068f9c");
-  // getBoardByName(value);
-  //getBoards();
+  if(boardNames.includes(boardName)) return openAlert() 
+  sessionBoardId = await postBoardName(boardName);
 
-  localStorage.setItem('boardName', value);
-  localStorage.setItem('boardId', sessionBoardId.BoardId);
-
-  // postNote("I am a note", "6f28a5d4-b14c-455b-9245-60d9e561d84e");
-  // getNote("6f28a5d4-b14c-455b-9245-60d9e561d84e","5f216c4d-4aef-42c1-8fc3-0a1c4e076650")
-  // patchNote("6f28a5d4-b14c-455b-9245-60d9e561d84e","5f216c4d-4aef-42c1-8fc3-0a1c4e076650","I am a new note now, yayyy!!");
-  //deleteNote("6f28a5d4-b14c-455b-9245-60d9e561d84e", "794166f2-bd7f-4001-84e8-4ec2fac0c0ca")
-
-  // console.log("response code :"+JSON.stringify(responseCode));
+  setLocalStorage('boardName',boardName);
+  setLocalStorage('boardId', sessionBoardId.BoardId)
+  goToBoardURL(boardName)
   //Delaying code run for 500ms so that postBoardName is able to penetrate the request
 
-  //Post board name to backend.
-  // if(responseCode === 200)
-  //  {
-  //       window.location.href = "index.html";
-  //       console.log(getBoardById("1adafb42-8879-49c7-868d-a89317bd6cf1"));
-
-  //       //Append board name to url.sl
-  //     //  window.history.replaceState(null, null, value);
-  // }
   //Uncomment or comment when testing
   // console.log(getBoardByName(value));
   console.log(sessionBoardId);
@@ -58,8 +41,14 @@ async function getBoardName(boardId) {
   return result;
 }
 
+/**
+ * creates a board in dyanamodb from the boardName
+ * @async
+ * @param {string} boardName 
+ * @returns {Promise<string>} the board id for the newly created board
+ */
 async function postBoardName(boardName) {
-  sessionBoardId = await fetch(url, {
+  const response = await fetch(url, {
     method: 'POST',
     mode: 'cors',
     headers: {
@@ -69,18 +58,12 @@ async function postBoardName(boardName) {
     body: JSON.stringify({
       BoardName: boardName,
     }),
-  })
-    .then((response) => {
-      goToBoardURL(boardName)
-      // window.location.href = `index.html?boardname=${boardName}`;
-      // middlware_boardid=JSON.stringify(response.JSON());
-      response_status = response.status;
-      return response.text().then(function (text) {
-        return text ? JSON.parse(text) : {};
-      });
-    })
-
-    .catch((err) => console.log(err));
+  }).catch(err => console.error(err.message));
+  if(response.ok) {
+    const json = await response.json();
+    return json;
+  };
+  return '';
 }
 
 /**
@@ -285,7 +268,7 @@ async function patchBoardName(boardId, newName) {
  * @description connect to the websocket
  * @returns {Promise<'open' | 'error'>}
  */
-function onConnect() {
+ function onConnect() {
   return new Promise((resolve, reject) => {
     webSocket = new WebSocket(webSocketURL);
     webSocket.onopen = (event) => {
@@ -355,7 +338,7 @@ function redirectToHome() {
  * @param {string} boardname
  * @param {boolean} redirect if true will use location.replace
  */
- function goToBoardURL(boardname, redirect = false) {
+function goToBoardURL(boardname, redirect = false) {
   const prodpath = isProduction ? '/board' : '/index.html'
   const url = `${prodpath}?boardname=${boardname}`
   if(redirect) location.replace(url);
@@ -460,11 +443,11 @@ function postPatchNotesOnSave() {
 }
 
 function openToastMessage() {
-    document.getElementById('confirmation-prompt').classList.remove('hide');
+  document.getElementById('confirmation-prompt').classList.remove('hide');
 }
 
 function closeToastMessage() {
-    document.getElementById('confirmation-prompt').classList.add('hide');
+  document.getElementById('confirmation-prompt').classList.add('hide');
 }
 
 /**
@@ -486,22 +469,32 @@ function addEventListenersToBoardPage () {
   saveNoteBTN.addEventListener('click',postPatchNotesOnSave);
 }
 
+function addEventListenerToHomePage () {
+  document.querySelector('form[name=createBoard]').addEventListener('submit', (event) => {
+    event.preventDefault();
+    /**@type {HTMLFormElement} */
+    const form = event.target;
+    const boardName = new FormData(form).get('boardname');
+    createNewBoard(boardName)
+  })
+}
+
 /**
 * start aws websocket connection and receive messages here
 */
 async function initWebSocket() {
-    const isOpen = await onConnect();
-    console.log({isOpen}, 'websocket is open');
-    
-    if(isOpen === 'error') return;
+  const isOpen = await onConnect();
+  console.log({isOpen}, 'websocket is open');
   
-    webSocket.onmessage = (event) => {
-      /**@type MessageType */
-      const data = JSON.parse(event.data);
-      console.log({ data }, 'received message');
-      getMessage(data);
-    };
-  }
+  if(isOpen === 'error') return;
+
+  webSocket.onmessage = (event) => {
+    /**@type MessageType */
+    const data = JSON.parse(event.data);
+    console.log({ data }, 'received message');
+    getMessage(data);
+  };
+}
 
 /**
  * @description loads the board and cards if it exists or redirects to home.html
@@ -546,6 +539,7 @@ function localDevEnv (pathname) {
     case '/home.html': {
       // do stuff for home.html
       history.replaceState(null, null, '/');
+      addEventListenerToHomePage()
       break;
     }
     default: {
@@ -575,6 +569,7 @@ function productionEnv (pathname) {
     case '/home.html': {
       // do stuff for home.html
       history.replaceState(null, null, '/');
+      addEventListenerToHomePage()
       break;
     }
     default: {
@@ -594,9 +589,7 @@ async function onLoad() {
     default: {
       localDevEnv(pathname)
     }
-
   }
   // TODO
   // document.getElementById('confirmation-prompt').style.display = 'none';
-
 }
