@@ -464,8 +464,11 @@ async function onCardChange(id, text, c) {
         value: text,
         colour: c
     });
-
-    addTextToArray(id,text)
+    dispatchWebSocketMessage({action: 'default', 
+        message: { action: 'editCard', 
+        data: { id, value: text, colour: c }
+    }});
+    addTextToArray(id,text);
 }
 
 function moveCard(card, position) {
