@@ -1,5 +1,5 @@
 let sessionBoardId;
-let url = ENV?.URL || 'https://37run05fad.execute-api.ap-southeast-2.amazonaws.com/prod/board/';
+let url = 'https://37run05fad.execute-api.ap-southeast-2.amazonaws.com/prod/board/';
 let boardNames;
 const webSocketURL = 'wss://n4f51sq0t1.execute-api.ap-southeast-2.amazonaws.com/prod';
 /**@type {WebSocket} */
