@@ -555,7 +555,8 @@ function productionEnv (pathname) {
     // home.html
     case '/': {
       if(!boardname) {
-        location.replace('/home.html');
+        addEventListenerToHomePage();
+        // location.replace('/home.html');
         break;
       }
       location.replace('/board?' + `boardname=${boardname}`);
