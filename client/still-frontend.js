@@ -98,13 +98,18 @@ async function getBoardNames() {
 }
 
 async function getBoards() {
-  let boards = await fetch(url).then((response) => response.text());
-  // .then((json) => {
-  //   console.log(JSON.stringify(json));
-  if (response.ok) {
-    const boardsObject = await response.json();
-    return boardsObject;
-  }
+  try {
+    const response = await fetch(url);
+      if (response.ok) {
+        const boardsObject = await response.json();
+        return boardsObject;
+      }
+      const {status, statusText} = response;
+      throw Error(`${status}, ${statusText}`);
+    } catch (error) {
+      console.error(error, 'error fetching boards');
+      return [];
+    }
 }
 
 /**
@@ -270,7 +275,7 @@ async function patchBoardName(boardId, newName) {
  */
  function onConnect() {
   return new Promise((resolve, reject) => {
-    webSocket = new WebSocket(webSocketURL);
+    webSocket = new WebSocket(`${webSocketURL}?boardId=${getLocalStorage('boardId')}`);
     webSocket.onopen = (event) => {
       resolve('open');
     }
@@ -412,10 +417,11 @@ function formAValidNote({id, text, x = 0, y = 0, rot = 0, colour = '' , type = '
 
 /**
  * sends a websocket message to AWS API Gateway
- * @param {{action: Action, message: MessageType }} dispatch
+ * @param {{action: Action, message: MessageType, boardId: typeof getLocalStorage('boardId') }} dispatch
  */
 function dispatchWebSocketMessage(dispatch = {action: 'default', message: {}}) {
-    webSocket.send(JSON.stringify(dispatch));
+  dispatch.boardId === undefined ? dispatch.boardId = getLocalStorage('boardId') : null;
+  webSocket.send(JSON.stringify(dispatch));
 }
 
 /**
